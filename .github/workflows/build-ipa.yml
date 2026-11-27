@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -23,9 +23,12 @@ jobs:
 
       - name: Build the unsigned iPhone app
         env:
-          DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+          DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
         run: |
           xcodebuild -version
+          if ! xcrun --sdk iphoneos metal --version >/dev/null 2>&1; then
+            xcodebuild -downloadComponent metalToolchain
+          fi
           xcodebuild -project OutOfBody.xcodeproj \
             -scheme OutOfBody -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' \
@@ -35,6 +38,7 @@ jobs:
         run: |
           app=build/Build/Products/Release-iphoneos/OutOfBody.app
           test -f "$app/OutOfBody"
+          test -f "$app/default.metallib"
           test -d "$app/DepthAnythingV2SmallF16.mlmodelc"
           mkdir -p Payload
           cp -R "$app" Payload/
